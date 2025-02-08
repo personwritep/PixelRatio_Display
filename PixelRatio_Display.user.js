@@ -1,0 +1,99 @@
+// ==UserScript==
+// @name        PixelRatio Display
+// @namespace        http://tampermonkey.net/
+// @version        0.7
+// @description        ブラウザによる拡大・縮小の有無を表示する
+// @author        everyone
+// @match        https://*/*
+// @match        http://*/*
+// @noframes
+// @grant        none
+// @updateURL        https://github.com/personwritep/PixelRatio_Display/raw/main/PixelRatio_Display.user.js
+// @downloadURL        https://github.com/personwritep/PixelRatio_Display/raw/main/PixelRatio_Display.user.js
+// ==/UserScript==
+
+
+setTimeout(()=>{
+    let target=document.querySelector('head title');
+    let monitor=new MutationObserver(page_ck);
+    monitor.observe(target, { childList: true });
+}, 200);
+
+page_ck();
+
+function page_ck(){
+    let t=0;
+    let remove=null;
+    let updatePixelRatio=function(){
+        if(remove !=null){
+            remove(); }
+
+        let dp=window.devicePixelRatio;
+        let mqString='(resolution: '+dp+'dppx)';
+        let media=matchMedia(mqString);
+        media.addEventListener('change', updatePixelRatio);
+
+        remove=function(){
+            media.removeEventListener('change', updatePixelRatio); };
+
+        disp_dpr(window.devicePixelRatio); }
+
+
+    updatePixelRatio();
+
+
+    function disp_dpr(dpr){
+        if(t!=0){
+            if(t<9){
+                t=t+1; }
+            else{
+                t=1; }}
+        let class_t='.t'+ t;
+
+        if(t!=0 || dpr!=1){
+            disp_act(dpr, t);
+            setTimeout(()=>{
+                document.querySelector(class_t).remove();
+            }, 2000); }
+
+        if(t==0){
+            t=1; }
+
+
+        function disp_act(dpr, term){
+            let mag=1/dpr;
+            let pos=60/dpr;
+            let dpr_=Math.round(dpr*100) +'%';
+            let disp=
+                '<div class="dpr t'+ term +'"><p>'+ dpr_ +'</p><div class="dpr_b"></div>'+
+                '<style>'+
+                '.dpr { position: fixed; top: '+ pos +'px; left: '+ pos +'px; z-index: calc(infinity); '+
+                'transform: scale('+ mag +'); transform-origin: top left; '+
+                'display: flex; justify-content: center; align-items: center; '+
+                'width: 160px; height: 160px; '+
+                'animation: fade 2s; animation-fill-mode: forwards; } '+
+                '.dpr p { position: absolute; font: bold 36px Meiryo; color: #fff; } '+
+                '.dpr_b { width: 100%; height: 100%; background: #000000c0; '+
+                'outline: 1px solid #fff; outline-offset: -1px; } ';
+
+            if(dpr==1){
+                disp+=
+                    '.dpr p { animation: fade .5s; animation-fill-mode: forwards; } '+
+                    '.dpr_b { animation: size .5s; animation-fill-mode: forwards; } '; }
+
+            disp+=
+                '@keyframes fade { 90% { opacity: 1; } 100% { opacity: 0; }} '+
+                '@keyframes size { 60% { width: 100%; height: 100%; } '+
+                '100% { width: 0; height: 0; }} '+
+                '</style></div>';
+
+            if(document.querySelector('.dpr')){
+                document.querySelector('.dpr').remove(); }
+            document.body.insertAdjacentHTML('beforeend', disp);
+
+        } // disp_act()
+    } // disp_dpr(dpr)
+
+} // page_ck()
+
+

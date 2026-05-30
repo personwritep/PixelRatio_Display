@@ -1,0 +1,74 @@
+// ==UserScript==
+// @name         PixelRatio Display
+// @namespace    http://tampermonkey.net/
+// @version       0.1
+// @description  ブラウザによる拡大・縮小の有無を表示する
+// @author        everyone
+// @match         https://*/*
+// @match         http://*/*
+// @noframes
+// @grant          none
+// ==/UserScript==
+
+
+let target=document.querySelector('head title');
+let monitor=new MutationObserver(page_ck);
+monitor.observe(target, { childList: true });
+
+
+page_ck();
+
+function page_ck(){
+
+    let remove=null;
+    let updatePixelRatio=function(){
+        if(remove !=null){
+            remove(); }
+
+        let dp=window.devicePixelRatio;
+        let mqString='(resolution: '+dp+'dppx)';
+        let media=matchMedia(mqString);
+        media.addEventListener('change', updatePixelRatio);
+
+        remove=function(){
+            media.removeEventListener('change', updatePixelRatio); };
+
+        disp_dpr(window.devicePixelRatio); }
+
+
+    updatePixelRatio();
+
+
+    function disp_dpr(dpr){
+        if(dpr!=1){
+            disp_act(dpr);
+            setTimeout(()=>{
+                document.querySelector('#dpr').remove();
+            }, 3000); }
+        else{
+            disp_act(1);
+            setTimeout(()=>{
+                document.querySelector('#dpr').remove();
+            }, 1000); }
+
+
+        function disp_act(dpr){
+            let mag=1/dpr;
+            let posxy=60/dpr;
+            dpr=Math.round(dpr*100) +'%';
+            let disp=
+                '<div id="dpr"><span>'+ dpr +'</span>'+
+                '<style>'+
+                '#dpr { position: fixed; top: '+ posxy +'px; left: '+ posxy +'px; z-index: 1000000; '+
+                'transform: scale('+ mag +'); transform-origin: top left; '+
+                'padding: 40px; font: bold 40px Meiryo; color: #fff; background: #00000080; } '+
+                '</style></div>';
+
+            if(document.querySelector('#dpr')){
+                document.querySelector('#dpr').remove(); }
+            document.body.insertAdjacentHTML('beforeend', disp);
+
+        } // disp_act()
+    } // disp_dpr(dpr)
+
+} // page_ck()

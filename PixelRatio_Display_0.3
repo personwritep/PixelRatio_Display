@@ -1,0 +1,88 @@
+// ==UserScript==
+// @name         PixelRatio Display
+// @namespace    http://tampermonkey.net/
+// @version       0.3
+// @description  ブラウザによる拡大・縮小の有無を表示する
+// @author        everyone
+// @match         https://*/*
+// @match         http://*/*
+// @noframes
+// @grant          none
+// ==/UserScript==
+
+
+let target=document.querySelector('head title');
+let monitor=new MutationObserver(page_ck);
+monitor.observe(target, { childList: true });
+
+
+page_ck();
+
+function page_ck(){
+    let t=0;
+    let remove=null;
+    let updatePixelRatio=function(){
+        if(remove !=null){
+            remove(); }
+
+        let dp=window.devicePixelRatio;
+        let mqString='(resolution: '+dp+'dppx)';
+        let media=matchMedia(mqString);
+        media.addEventListener('change', updatePixelRatio);
+
+        remove=function(){
+            media.removeEventListener('change', updatePixelRatio); };
+
+        disp_dpr(window.devicePixelRatio); }
+
+
+    updatePixelRatio();
+
+
+    function disp_dpr(dpr){
+        if(t!=0){
+            if(t<9){
+                t=t+1; }
+            else{
+                t=1; }}
+        let class_t='.t'+ t;
+
+        if(dpr!=1){
+            disp_act(dpr, t);
+            setTimeout(()=>{
+                document.querySelector(class_t).remove();
+            }, 2000); }
+        else{
+            if(t!=0){ // ページを開いた時 100%なら表示なし
+                disp_act(1, t);
+                setTimeout(()=>{
+                    document.querySelector(class_t).remove();
+                }, 500); }}
+
+        if(t==0){
+            t=1; }
+
+
+        function disp_act(dpr, term){
+            let mag=1/dpr;
+            let pos=60/dpr;
+            dpr=Math.round(dpr*100) +'%';
+            let disp=
+                '<div class="dpr t'+ term +'"><span>'+ dpr +'</span>'+
+                '<style>'+
+                '.dpr { position: fixed; top: '+ pos +'px; left: '+ pos +'px; z-index: calc(infinity); '+
+                'transform: scale('+ mag +'); transform-origin: top left; '+
+                'display: flex; justify-content: center; align-items: center; height: 160px; '+
+                'width: 160px; font: bold 36px Meiryo; color: #fff; background: #00000080; '+
+                'animation: fade 2s; animation-fill-mode: forwards; } '+
+                '@keyframes fade { 90% { opacity: 1; } 100% { opacity: 0; }} '+
+                '</style></div>';
+
+            if(document.querySelector('.dpr')){
+                document.querySelector('.dpr').remove(); }
+            document.body.insertAdjacentHTML('beforeend', disp);
+
+        } // disp_act()
+    } // disp_dpr(dpr)
+
+} // page_ck()
